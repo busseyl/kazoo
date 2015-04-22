@@ -46,15 +46,6 @@ apps:
 
 kazoo: core apps
 
-core:
-	$(MAKE) -C core all
-deps:
-	$(MAKE) -C deps all
-apps:
-	$(MAKE) -C applications all
-
-kazoo: core apps
-
 build-plt :
 	@$(DIALYZER) --build_plt --output_plt $(ROOT)/.platform_dialyzer.plt \
 		--apps erts kernel stdlib crypto public_key ssl
