@@ -67,6 +67,7 @@
 
 -define(AGG_VIEW_DESCENDANTS, <<"accounts/listing_by_descendants">>).
 -define(PORT_REQ_NUMBERS, <<"port_requests/port_in_numbers">>).
+-define(PORT_REQ_LISTING, <<"port_requests/crossbar_listing">>).
 -define(ALL_PORT_REQ_NUMBERS, <<"port_requests/all_port_in_numbers">>).
 
 -define(UNFINISHED_PORT_REQUEST_LIFETIME
@@ -713,11 +714,12 @@ summary(Context) ->
                    ,'include_docs'
                   ],
 
-    crossbar_doc:load_view(<<"port_requests/crossbar_listing">>
-                           ,ViewOptions
-                           ,cb_context:set_account_db(Context, ?KZ_PORT_REQUESTS_DB)
-                           ,fun normalize_view_results/2
-                          ).
+    crossbar_doc:load_view(
+      ?PORT_REQ_LISTING
+      ,ViewOptions
+      ,cb_context:set_account_db(Context, ?KZ_PORT_REQUESTS_DB)
+      ,fun normalize_view_results/2
+     ).
 
 %%--------------------------------------------------------------------
 %% @private
@@ -730,11 +732,11 @@ by_number(Context, Number) ->
     AccountId = cb_context:account_id(Context),
     ViewOptions = [{'key', [AccountId, E164]}, 'include_docs'],
     crossbar_doc:load_view(
-        ?ALL_PORT_REQ_NUMBERS
-        ,ViewOptions
-        ,cb_context:set_account_db(Context, ?KZ_PORT_REQUESTS_DB)
-        ,fun normalize_view_results/2
-    ).
+      ?ALL_PORT_REQ_NUMBERS
+      ,ViewOptions
+      ,cb_context:set_account_db(Context, ?KZ_PORT_REQUESTS_DB)
+      ,fun normalize_view_results/2
+     ).
 
 %%--------------------------------------------------------------------
 %% @private
