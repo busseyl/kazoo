@@ -1,5 +1,5 @@
 %%%-------------------------------------------------------------------
-%%% @copyright (C) 2012, VoIP, INC
+%%% @copyright (C) 2012-2015, 2600Hz, INC
 %%% @doc
 %%%
 %%% @end
@@ -78,8 +78,7 @@ init([]) ->
     case whapps_config:get_is_true(?WHS_CONFIG_CAT, <<"sync_services">>, 'false') of
         'false' -> {'ok', #state{}};
         'true' ->
-            ScanRate = whapps_config:get_integer(?WHS_CONFIG_CAT, <<"scan_rate">>, 20000),
-            _TRef = erlang:send_after(ScanRate, self(), {'try_sync_service'}),
+            start_sync_timer(),
             {'ok', #state{}}
     end.
 
@@ -125,12 +124,16 @@ handle_cast(_Msg, State) ->
 %%--------------------------------------------------------------------
 handle_info({'try_sync_service'}, State) ->
     _ = maybe_sync_service(),
-    ScanRate = whapps_config:get_integer(?WHS_CONFIG_CAT, <<"scan_rate">>, 20000),
-    _TRef = erlang:send_after(ScanRate, self(), {'try_sync_service'}),
+    start_sync_timer(),
     {'noreply', State};
 handle_info(_Info, State) ->
     lager:debug("unhandled msg: ~p", [_Info]),
     {'noreply', State}.
+
+-spec start_sync_timer() -> reference().
+start_sync_timer() ->
+    ScanRate = whapps_config:get_integer(?WHS_CONFIG_CAT, <<"scan_rate">>, 20 * ?MILLISECONDS_IN_SECOND),
+    _TRef = erlang:send_after(ScanRate, self(), {'try_sync_service'}).
 
 %%--------------------------------------------------------------------
 %% @private
@@ -191,7 +194,9 @@ bump_modified(JObj) ->
 
     UpdatedJObj = wh_json:set_values([{<<"pvt_modified">>, wh_util:current_tstamp()}
                                       ,{<<"_rev">>, wh_json:get_value(<<"_rev">>, JObj)}
-                                     ], wh_services:to_json(Services)),
+                                     ]
+                                     ,wh_services:to_json(Services)
+                                    ),
     case couch_mgr:save_doc(?WH_SERVICES_DB, UpdatedJObj) of
         {'error', _}=E ->
             %% If we conflict or cant save the doc with a new modified timestamp
@@ -339,9 +344,13 @@ mark_dirty(AccountId) when is_binary(AccountId) ->
         {'ok', JObj} -> mark_dirty(JObj)
     end;
 mark_dirty(JObj) ->
-    couch_mgr:save_doc(?WH_SERVICES_DB, wh_json:set_values([{<<"pvt_dirty">>, 'true'}
-                                                            ,{<<"pvt_modified">>, wh_util:current_tstamp()}
-                                                           ], JObj)).
+    couch_mgr:save_doc(?WH_SERVICES_DB
+                       ,wh_json:set_values([{<<"pvt_dirty">>, 'true'}
+                                            ,{<<"pvt_modified">>, wh_util:current_tstamp()}
+                                           ]
+                                           ,JObj
+                                          )
+                      ).
 
 -spec mark_clean(wh_json:object()) -> wh_std_return().
 mark_clean(JObj) ->
