@@ -1076,8 +1076,6 @@ dry_run(Services) ->
 -spec calculate_charges(services(), wh_json:objects()) -> wh_json:object().
 calculate_charges(Services, JObjs) ->
     case calculate_services_charges(Services) of
-        {'error', _E} ->
-            wh_json:new();
         {'no_plan', _NP} ->
             wh_json:new();
         {'ok', PlansCharges} ->
@@ -1090,7 +1088,7 @@ calculate_charges(Services, JObjs) ->
 %% @end
 %%--------------------------------------------------------------------
 -spec calculate_services_charges(services()) ->
-                                        {'no_plan' | 'error' | 'ok', wh_json:object()}.
+                                        {'no_plan' | 'ok', wh_json:object()}.
 -spec calculate_services_charges(services(), wh_service_plans:plans()) ->
                                         {'error' | 'ok', wh_json:object()}.
 calculate_services_charges(#wh_services{jobj=ServiceJObj}=Services) ->
